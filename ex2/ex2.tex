@@ -1,0 +1,41 @@
+\documentclass[a4paper,12pt]{article}
+\author{Imre Kerr}
+\title{Exercise 2}
+\date{\today}
+\begin{document}
+\section{Exercise 1} % (fold)
+\label{sec:exercise_1}
+\begin{itemize}
+	\item \begin{itemize}
+		\item L1: 4096 each core, 8192 total
+		\item L2: 245760
+		\item L3: 4718592
+	\end{itemize}
+	\item \begin{itemize}
+		\item L1: 64x64 on one core, 90x90 on both
+		\item L2: 495x495
+		\item L3: 2172x2172
+	\end{itemize}
+\end{itemize}
+% section exercise_1 (end)
+\section{Exercise 2} % (fold)
+\label{sec:exercise_2}
+\begin{itemize}
+	\item The speed of light gives us a minimum propagation time. Quantum tunneling limits how small current transistors can be.
+	\item Approximately 3 cm.
+ \end{itemize}
+% section exercise_2 (end)
+\section{Exercise 3} % (fold)
+\label{sec:exercise_3}
+\begin{itemize}
+	\item The L1 cache can hold 8192 reals. Fetching them from main memory takes a certain amount of time. Increasing input size up to that limit means that a bigger portion of the time is spent doing work, rather than waiting for data. After that limit, you need to fetch more stuff from main memory, killing performance.
+	Op2 and op3 have a limit of n = 4096 because they operate on two vectors instead of one. Op3 is faster than op2 because of fused multiply-add. Op1 is faster than op2 because c can be kept in a register.
+	\item Because accessing main memory is slow and you want to avoid it.
+\end{itemize}
+% section exercise_3 (end)
+\begin{itemize}
+	\item It is advantageous because all memory will be accessed sequentially, improving locality and making the most of the cache.
+	\item Create a \texttt{struct} or \texttt{type} containing three numbers a, b and c, and have an array of those.
+	\item Since most caches are n-way associative, we know that the cache can hold a line of a, b and c simultaneously. Therefore it shouldn't matter much in this case.
+\end{itemize}
+\end{document}
