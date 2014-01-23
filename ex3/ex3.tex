@@ -15,6 +15,7 @@ LINPACK is a benchmark program that aims to measure a computer's performance by 
 	\item Each processor is connected to a node in the mesh.
 	\item Shared-memory: each processor can access all of the memory directly, without message passing.
 	\item No.
+	\item ccNUMA includes cache coherency. (When one processor changes its local copy, copies in other caches are updated as well.)
 \end{enumerate}
 % section exercise_2 (end)
 
@@ -25,6 +26,6 @@ LINPACK is a benchmark program that aims to measure a computer's performance by 
 
 \section{Exercise 4} % (fold)
 \label{sec:exercise_4}
-No. Why would it be?
+No. Otherwise \texttt{MPI_ANY_TAG} wouldn't be a thing.
 % section exercise_4 (end)
 \end{document}
