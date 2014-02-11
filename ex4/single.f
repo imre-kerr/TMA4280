@@ -1,27 +1,27 @@
-program ex4_single
-	integer :: k
-	real, parameter :: s = (4.D0 * datan(1.D0))**2 / 6
-	real :: sk
-	write (*, "('S = pi^2/6 = 'F7.5)") s
+PROGRAM EX4_SINGLE
+	INTEGER*8 :: K
+	REAL*8, PARAMETER :: S = (4.D0 * DATAN(1.D0))**2 / 6
+	REAL*8 :: SK
+	WRITE (*, "('S = PI^2/6 = 'F7.5)") S
 
-	do k = 3, 14
-		sk = s_n(2**k)
-		write (*, *)
-		write (*, "('Sn for n = 2^'I2' = 'F7.5)") k, sk
-		write (*, "('S - Sn = 'F7.5)") s-sk
-	end do
-end program
+	DO K = 27, 27
+		SK = S_N(2**K)
+		WRITE (*, *)
+		WRITE (*, "('SN FOR N = 2^'I0.2' = 'F7.5)") K, SK
+		WRITE (*, "('S - SN = 'ES13.7)") S-SK
+	END DO
+END PROGRAM
 
-real function s_n(n)
-	integer :: n, i
-	real, dimension(n) :: v
+REAL FUNCTION S_N(N)
+	INTEGER*8 :: N, I
+	REAL*8, DIMENSION(N) :: V
 
-	do i = 1, n
-		v(i) = 1.0 / i**2
-	end do
-	s_n = 0.0
-	do i = 1, n
-		s_n = s_n + v(i)
-	end do
-	return
-end function
+	DO I = 1, N
+		V(I) = 1.0 / I**2
+	END DO
+	S_N = 0.0
+	DO I = N, 1, -1
+		S_N = S_N + V(I)
+	END DO
+	RETURN
+END FUNCTION

@@ -1,9 +1,10 @@
 project(ex4)
 enable_language(Fortran)
-cmake_minimum_required(VERSION 2.6)	
+cmake_minimum_required(VERSION 2.8)	
 find_package(OpenMP REQUIRED)
 find_package(MPI REQUIRED)
-list(APPEND CMAKE_Fortran_FLAGS ${OpenMP_Fortran_FLAGS} -ffree-form)
+list(APPEND CMAKE_Fortran_FLAGS 
+${OpenMP_Fortran_FLAGS} -ffree-form)
 add_executable(single single.f)
 add_executable(openmp openmp.f)
 add_executable(mpi mpi.f)
