@@ -2,6 +2,9 @@ project(ex4)
 enable_language(Fortran)
 cmake_minimum_required(VERSION 2.8)
 
+set(CMAKE_Fortran_FLAGS_DEBUG "${CMAKE_Fortran_FLAGS_DEBUG} -Wall -g")
+set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -Wall -O2")
+
 find_package(OpenMP REQUIRED)
 find_package(MPI REQUIRED)
 

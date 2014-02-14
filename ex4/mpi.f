@@ -1,59 +1,65 @@
 PROGRAM EX4_MPI
     USE MPI
-    INTEGER :: K, DIM
-    INTEGER :: RANK, SIZE, IERROR, TAG
+    INTEGER*8 :: K
+    INTEGER :: RANK, SIZ, TERROR
     INTEGER :: STATUS(MPI_STATUS_SIZE)
-    REAL, PARAMETER :: S = (4.D0 * DATAN(1.D0))**2 / 6
-    REAL :: SK, S_N
+    REAL*8, PARAMETER :: S = (4.D0 * DATAN(1.D0))**2 / 6
+    REAL*8 :: SK, S_N
 
-    CALL MPI_INIT(IERROR)
-    CALL MPI_COMM_SIZE(MPI_COMM_WORLD, SIZE, IERROR)
-    CALL MPI_COMM_RANK(MPI_COMM_WORLD, RANK, IERROR)
+    CALL MPI_INIT(TERROR)
+    CALL MPI_COMM_SIZE(MPI_COMM_WORLD, SIZ, TERROR)
+    CALL MPI_COMM_RANK(MPI_COMM_WORLD, RANK, TERROR)
 
     IF (RANK .EQ. 0) THEN
         WRITE (*, "('S = PI^2/6 = 'F7.5)") S
     END IF  
-    DO K = 4,14
-        SK = S_N(2**K, RANK, SIZE)
+    DO K = 3, 14
+        SK = S_N(2**K, RANK, SIZ)
         IF (RANK .EQ. 0) THEN
             WRITE (*, *)
             WRITE (*, "('SN FOR N = 2^'I0.2' = 'F7.5)") K, SK
             WRITE (*, "('S - SN = 'ES13.7)") S-SK
         END IF
+        CALL MPI_BARRIER(MPI_COMM_WORLD, TERROR)
     END DO
 
-    CALL MPI_FINALIZE(IERROR)
+    CALL MPI_FINALIZE(TERROR)
 END PROGRAM
 
-REAL FUNCTION S_N(N, RANK, SIZ)
+REAL*8 FUNCTION S_N(N, RANK, SIZ)
     USE MPI
-    INTEGER :: N, I, J, RANK, SIZ, IERROR
-    REAL :: SUM
-    REAL, DIMENSION(N/SIZ) :: V
-      PRINT *, SIZE(V)
-      PRINT *, N/SIZ
+    INTEGER*8 :: N, I, J, CNT
+    INTEGER :: RANK, SIZ, TERROR
+    INTEGER :: STATUS(MPI_STATUS_SIZE)
+    REAL*8 :: SUM
+    REAL*8, DIMENSION(N/SIZ+1) :: V
 
     IF(RANK .EQ. 0) THEN
-        DO I = SIZ-1, 1, -1
-            DO J = 1, N/SIZ
-                V(J) = 1.0/(J+(I*N)/SIZ)**2
+        DO I = SIZ-1, 0, -1
+            CNT = 0
+            DO J = I+1, N, SIZ
+
+                CNT = CNT + 1
+                V(CNT) = 1.0/(J**2)
             END DO
-            CALL MPI_SEND(V, N/SIZ, MPI_REAL, I, 0, MPI_COMM_WORLD, IERROR)
-        END DO
-        DO J = 1, N/SIZ
-            V(J) = 1.0/J**2
-        END DO
-        SUM = 0.0
-        DO J = N/SIZ, 1, -1
-            SUM = SUM + V(J)
+    
+            IF (I .NE. 0) THEN
+                CALL MPI_SEND(V, CNT, MPI_REAL8, I, 0, MPI_COMM_WORLD, TERROR)
+            END IF
         END DO
     ELSE
-        CALL MPI_RECV(V, N/SIZ, MPI_REAL, 0, 0, MPI_COMM_WORLD, IERROR)
-        SUM = 0.0
-        DO I = N/SIZ, 1, -1
-            SUM = SUM + V(I)
-        END DO
+        CNT = N/SIZ
+        IF (RANK .LT. MOD(N, SIZ)) THEN
+            CNT = CNT + 1
+        END IF
+        CALL MPI_RECV(V, CNT, MPI_REAL8, 0, 0, MPI_COMM_WORLD, STATUS, TERROR)
     END IF
-    CALL MPI_REDUCE(SUM, S_N, N/SIZ, MPI_REAL, MPI_SUM, 0, MPI_COMM_WORLD, IERROR)
+    
+    SUM = 0.0
+    DO I = CNT, 1, -1
+        SUM = SUM + V(I)
+    END DO
+    S_N = 0.0
+    CALL MPI_REDUCE(SUM, S_N, 1, MPI_REAL8, MPI_SUM, 0, MPI_COMM_WORLD, TERROR)
     RETURN
 END FUNCTION
