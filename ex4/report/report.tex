@@ -1,0 +1,52 @@
+\documentclass[a4paper, 12pt]{article}
+\title{TMA4280 -- Exercise 4}
+\author{Didrik Jonassen \and Imre Kerr}
+
+\begin{document}
+\maketitle
+
+\section{Description of Solution} % (fold)
+\label{sec:description_of_solution}
+    \subsection{Serial Version} % (fold)
+    \label{sub:serial_version}
+        The code is organized in a main program and one function, \texttt{S\_N}, which does the actual computation. The main program calls \texttt{S\_N} with various values of \texttt{N}, and writes the result to standard output.
+
+        The function \texttt{S\_N} comprises two loops. The first loop generates the vector elements, $v(i) = \frac{1}{i^2}$, using the code \texttt{V(I) = 1.0 / I**2}. (Generated using Fortran's Formula Translator feature.) The second loop computes the sum of these elements by looping through the vector and adding them up. It is worth noting that it sums the numbers from smallest to largest, to minimize loss of precision.
+        % subsection serial_version (end)
+
+    \subsection{Shared Memory Version} % (fold)
+    \label{sub:shared_memory_version}
+        The shared memory parallel version of the program is almost identical to the serial version, except for two \texttt{!\$OMP PARALLEL DO} directives. The second of these is a reduction, with the return value \texttt{S\_N} as the reduction variable.
+    % subsection shared_memory_version (end)
+
+    \subsection{Distributed Memory Version} % (fold)
+    \label{sub:distributed_memory_version}
+        Like the serial and shared memory version, the distributed memory program is also split into a main program and a compute function. The main program contains the setup calls to \texttt{MPI\_INIT}, \texttt{MPI\_COMM\_SIZE} AND \texttt{MPI\_COMM\_RANK}, and the call to \texttt{MPI\_FINALIZE} at the end. Only the process with rank 0 writes any output.
+
+        In the compute function, the rank-0 process is responsible for generating the vector $\underline{v}$ and distributing it to the other processes. When doing this, it will generate one ``chunk'' at a time, and send it to the appropriate process with a call to \texttt{MPI\_SEND}. The process on the receiving end will recieve the chunk with a call to \texttt{MPI\_RECV}. Process 0's own chunk is generated last, this time without a send/receive pair. Chunks are generated in an interleaved fashion, with $\frac{1}{1^2}$ going in the first chunk, $\frac{1}{2^2}$ going in the second, etc. This results in the local sums being similar in magnitude, which again limits the loss of precision when they are added up at the end.
+
+        While doing this, process 0 will re-use the same buffer, thereby ensuring that it never uses more memory than necessary. An alternative method would have been to generate the entire vector and distribute it using \texttt{MPI\_SCATTER}. And while this would certainly be simpler to program, the ``one chunk at a time'' method uses a factor of $P$ less memory, where $P$ is the number of processors.
+
+        After each process recieves its chunk of the vector, it computes a local sum using the same loop as before. Finally, the local sums are added up using a call to \texttt{MPI\_REDUCE}. Process 0 will then return the final sum, while all other processes return an unused value, 0.
+    % subsection distributed_memory_version (end)
+
+    \subsection{MPI/OpenMP} % (fold)
+    \label{sub:mpi_openmp}
+        Again, this version is only distinguished from the basic MPI version by the two \texttt{!\$OMP PARALLEL DO} directives.
+    % subsection mpi_openmp (end)
+% section description_of_solution (end)
+
+\section{Results} % (fold)
+\label{sec:results}
+    Notes about the following tests: 
+    \begin{itemize}
+        \item For the numerical tests, we give an abbreviated output containing only the differences, $S - S_n$.
+        \item For the timing tests, we use the Unix \texttt{time} command to time a single computation of $S_n$, for $n = 2^{27}$. This is done because the problem size given in the exercise, $n = 2^k, k = 3, \ldots, 14$, gives runtimes so short it's impossible to compare them.
+    \end{itemize}
+
+    \subsection{Serial Version} % (fold)
+    \label{sub:serial_version}
+    
+    % subsection serial_version (end)
+% section results (end)
+\end{document}
