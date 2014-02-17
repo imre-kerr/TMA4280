@@ -164,4 +164,27 @@ sys     0m0.614s
     % subsection mpi_openmp_version (end)
 
 % section results (end)
+\section{Discussion} % (fold)
+\label{sec:discussion}
+    \subsection{Performance}
+    In our testing, we saw that only the shared memory version gives any performance benefit. We think this has less to do with the memory model used, and more to do with the fact that having to create the vector on only one process is a bottleneck. One could argue that this means the distributed memory version is not load-balanced. This problem would diminish if the computation was more complex than summing a vector.
+
+    \subsection{FLOPs}
+    To generate the vector $\underline{v}$ we only need $n$ FLOPs. The square $i^2$ can be calculated using integer operations, leaving only the division to be calculated using a floating point operation. Equally the calculation of $S_n$ only need $n$ FLOPs, one for each of number in the vector. These numbers does not increase when solving the problem in parallel.
+
+        \subsubsection{Commutativity}
+        The fact that floating point operations are not commutative have some implications for the program. First of all it is important to sum the numbers from the smallest to the largest, not the other way around. If it is done incorrectly the error will stop scaling with the size of the vector at some point because the value to be added is too small to make a change to the value gained from adding the previous values in the vector.
+
+        This also has an impact on the result gained from the parallel versions of the program. As the vector is no longer added in the same order the error cannot be expected to stay the same as in the serial version, even if it happened to be the same in our case.
+
+    \subsection{MPI calls}
+    The MPI calls needed to make a program run is \texttt{MPI\_INIT}, \texttt{MPI\_COMM\_SIZE}, \texttt{MPI\_COMM\_RANK}, and \texttt{MPI\_FINALIZE}. For the program to do something useful we also need to send data between the processes. As the problem required that we generated the entire vector on one process the most convenient way to spread the subvectors is the function \texttt{MPI\_SCATTER}. The problem with this strategy is that the entire vector must be kept on the generating processor, and therefore the problem size cannot be scaled up with an increased number of cores. The max limit of the problem size is set by the amount of memory on the generating node.
+
+    Instead we opted to generate one part of the vector at a time and use \texttt{MPI\_SEND} and \texttt{MPI\_RECV} to send it to another process for computation. This way you can work on a much larger dataset without being limited by ram on the generating node. If the memory limit is reached one can simply add more nodes to be able to increase the problem size. For gathering up the results the most convenient way is to use \texttt{MPI\_REDUCE}. This function takes care of the logic that is required to optimally sum the individual processes values together and give it to one process.
+
+    As we can see the total memory usage is equal to the single-processor program even when run on several processors, but the total amount of available memory is greater, making the multi-processor program arguably more memory efficient.
+    % section discussion (end)
+
+    \subsection{Conclusion}
+    We have created several versions of a program to solve a simple, but computationally intensive problem. While this particular problem has little practical relevance, it models problems one can encounter in real life, and can give insights about how best to solve them.
 \end{document}
