@@ -8,19 +8,16 @@
 \section{Description of Solution} % (fold)
 \label{sec:description_of_solution}
     \subsection{Serial Version} % (fold)
-    \label{sub:serial_version}
-        The code is organized in a main program and one function, \texttt{S\_N}, which does the actual computation. The main program calls \texttt{S\_N} with various values of \texttt{N}, and writes the result to standard output.
+        The code is organized in a main program and one function, \texttt{S\_N}, which does the actual computation. The main program calls \texttt{S\_N} with various values of \texttt{N}, and writes the result to standard output. The difference $S-S_n$ is written with 15 decimal digits, which roughly corresponds to the precision of double-precision floating point numbers.
 
         The function \texttt{S\_N} comprises two loops. The first loop generates the vector elements, $v(i) = \frac{1}{i^2}$, using the code \texttt{V(I) = 1.0 / I**2}. (Generated using Fortran's Formula Translator feature.) The second loop computes the sum of these elements by looping through the vector and adding them up. It is worth noting that it sums the numbers from smallest to largest, to minimize loss of precision.
         % subsection serial_version (end)
 
     \subsection{Shared Memory Version} % (fold)
-    \label{sub:shared_memory_version}
         The shared memory parallel version of the program is almost identical to the serial version, except for two \texttt{!\$OMP PARALLEL DO} directives. The second of these is a reduction, with the return value \texttt{S\_N} as the reduction variable.
     % subsection shared_memory_version (end)
 
     \subsection{Distributed Memory Version} % (fold)
-    \label{sub:distributed_memory_version}
         Like the serial and shared memory version, the distributed memory program is also split into a main program and a compute function. The main program contains the setup calls to \texttt{MPI\_INIT}, \texttt{MPI\_COMM\_SIZE} AND \texttt{MPI\_COMM\_RANK}, and the call to \texttt{MPI\_FINALIZE} at the end. Only the process with rank 0 writes any output.
 
         In the compute function, the rank-0 process is responsible for generating the vector $\underline{v}$ and distributing it to the other processes. When doing this, it will generate one ``chunk'' at a time, and send it to the appropriate process with a call to \texttt{MPI\_SEND}. The process on the receiving end will recieve the chunk with a call to \texttt{MPI\_RECV}. Process 0's own chunk is generated last, this time without a send/receive pair. Chunks are generated in an interleaved fashion, with $\frac{1}{1^2}$ going in the first chunk, $\frac{1}{2^2}$ going in the second, etc. This results in the local sums being similar in magnitude, which again limits the loss of precision when they are added up at the end.
@@ -30,8 +27,7 @@
         After each process recieves its chunk of the vector, it computes a local sum using the same loop as before. Finally, the local sums are added up using a call to \texttt{MPI\_REDUCE}. Process 0 will then return the final sum, while all other processes return an unused value, 0.
     % subsection distributed_memory_version (end)
 
-    \subsection{MPI/OpenMP} % (fold)
-    \label{sub:mpi_openmp}
+    \subsection{MPI/OpenMP Version} % (fold)
         Again, this version is only distinguished from the basic MPI version by the two \texttt{!\$OMP PARALLEL DO} directives.
     % subsection mpi_openmp (end)
 % section description_of_solution (end)
@@ -42,35 +38,130 @@
     \begin{itemize}
         \item For the numerical tests, we give an abbreviated output containing only the differences, $S - S_n$.
         \item For the timing tests, we use the Unix \texttt{time} command to time a single computation of $S_n$, for $n = 2^{27}$. This is done because the problem size given in the exercise, $n = 2^k, k = 3, \ldots, 14$, gives runtimes so short it's impossible to compare them.
+        \item All tests were run on a dual core machine with HyperThreading, so the timing tests were done with 4 total threads in each case. (Except for the serial program, of course.)
     \end{itemize}
 
     \subsection{Serial Version} % (fold)
-    \label{sub:serial_version}
         \subsubsection{Numerical Results} % (fold)
-        \label{subsub:numerical_results}
             \begin{verbatim}
-S - SN FOR N = 2^03: 1.1751201E-01
-S - SN FOR N = 2^04: 6.0587534E-02
-S - SN FOR N = 2^05: 3.0766805E-02
-S - SN FOR N = 2^06: 1.5503566E-02
-S - SN FOR N = 2^07: 7.7820625E-03
-S - SN FOR N = 2^08: 3.8986311E-03
-S - SN FOR N = 2^09: 1.9512195E-03
-S - SN FOR N = 2^10: 9.7608640E-04
-S - SN FOR N = 2^11: 4.8816264E-04
-S - SN FOR N = 2^12: 2.4411140E-04
-S - SN FOR N = 2^13: 1.2206344E-04
-S - SN FOR N = 2^14: 6.1033870E-05
+S - SN FOR N = 2^03: 1.17512014971443E-01
+S - SN FOR N = 2^04: 6.05875340265711E-02
+S - SN FOR N = 2^05: 3.07668046302652E-02
+S - SN FOR N = 2^06: 1.55035659995419E-02
+S - SN FOR N = 2^07: 7.78206247968138E-03
+S - SN FOR N = 2^08: 3.89863112331024E-03
+S - SN FOR N = 2^09: 1.95121947262034E-03
+S - SN FOR N = 2^10: 9.76086397362463E-04
+S - SN FOR N = 2^11: 4.88162639631140E-04
+S - SN FOR N = 2^12: 2.44111404580805E-04
+S - SN FOR N = 2^13: 1.22063439612630E-04
+S - SN FOR N = 2^14: 6.10338704929436E-05
             \end{verbatim}
         % subsection numerical_results (end)
+        \subsubsection{Timing} % (fold)
+\begin{verbatim}
+real    0m1.855s
+user    0m1.266s
+sys     0m0.581s
+\end{verbatim}        
+        % subsection timing (end)
     % subsection serial_version (end)
 
     \subsection{Shared Memory Version} % (fold)
-    \label{sub:shared_memory_version}
         \subsubsection{Numerical Results} % (fold)
-        \label{subsub:numerical_results}
-        
+        \begin{verbatim}
+S - SN FOR N = 2^03: 1.17512014971443E-01
+S - SN FOR N = 2^04: 6.05875340265711E-02
+S - SN FOR N = 2^05: 3.07668046302652E-02
+S - SN FOR N = 2^06: 1.55035659995419E-02
+S - SN FOR N = 2^07: 7.78206247968138E-03
+S - SN FOR N = 2^08: 3.89863112331024E-03
+S - SN FOR N = 2^09: 1.95121947262034E-03
+S - SN FOR N = 2^10: 9.76086397362463E-04
+S - SN FOR N = 2^11: 4.88162639631140E-04
+S - SN FOR N = 2^12: 2.44111404580805E-04
+S - SN FOR N = 2^13: 1.22063439612630E-04
+S - SN FOR N = 2^14: 6.10338704929436E-05
+        \end{verbatim}     
         % subsection numerical_results (end)
+        \subsubsection{Timing} % (fold)
+\begin{verbatim}
+real    0m0.936s
+user    0m2.672s
+sys     0m0.740
+\end{verbatim}        
+        % subsection timing (end)
+
     % subsection shared_memory_version (end)
+
+    \subsection{Distributed Memory Version} % (fold)
+        \subsubsection{Numerical Results, 2 Processes} % (fold)
+        \begin{verbatim}
+S - SN FOR N = 2^03: 1.17512014971443E-01
+S - SN FOR N = 2^04: 6.05875340265711E-02
+S - SN FOR N = 2^05: 3.07668046302652E-02
+S - SN FOR N = 2^06: 1.55035659995419E-02
+S - SN FOR N = 2^07: 7.78206247968138E-03
+S - SN FOR N = 2^08: 3.89863112331024E-03
+S - SN FOR N = 2^09: 1.95121947262034E-03
+S - SN FOR N = 2^10: 9.76086397362463E-04
+S - SN FOR N = 2^11: 4.88162639631140E-04
+S - SN FOR N = 2^12: 2.44111404580805E-04
+S - SN FOR N = 2^13: 1.22063439612630E-04
+S - SN FOR N = 2^14: 6.10338704929436E-05
+        \end{verbatim}
+        % subsection numerical_results_2_processors (end)
+
+        \subsubsection{Numerical Results, 8 Processes} % (fold)
+        \begin{verbatim}
+S - SN FOR N = 2^03: 1.17512014971443E-01
+S - SN FOR N = 2^04: 6.05875340265711E-02
+S - SN FOR N = 2^05: 3.07668046302652E-02
+S - SN FOR N = 2^06: 1.55035659995419E-02
+S - SN FOR N = 2^07: 7.78206247968138E-03
+S - SN FOR N = 2^08: 3.89863112331024E-03
+S - SN FOR N = 2^09: 1.95121947262034E-03
+S - SN FOR N = 2^10: 9.76086397362463E-04
+S - SN FOR N = 2^11: 4.88162639631140E-04
+S - SN FOR N = 2^12: 2.44111404580805E-04
+S - SN FOR N = 2^13: 1.22063439612630E-04
+S - SN FOR N = 2^14: 6.10338704929436E-05
+        \end{verbatim}
+        % subsection numerical_results_8_processes (end)
+        \subsubsection{Timing} % (fold)
+\begin{verbatim}
+real    0m1.952s
+user    0m6.586s
+sys     0m0.868s
+\end{verbatim}        
+        % subsection timing (end)
+    % subsection distributed_memory_version (end)
+
+    \subsection{MPI/OpenMP Version} % (fold)
+        \subsubsection{Numerical Results} % (fold)
+        \begin{verbatim}
+S - SN FOR N = 2^03: 1.17512014971443E-01
+S - SN FOR N = 2^04: 6.05875340265711E-02
+S - SN FOR N = 2^05: 3.07668046302652E-02
+S - SN FOR N = 2^06: 1.55035659995419E-02
+S - SN FOR N = 2^07: 7.78206247968138E-03
+S - SN FOR N = 2^08: 3.89863112331024E-03
+S - SN FOR N = 2^09: 1.95121947262034E-03
+S - SN FOR N = 2^10: 9.76086397362463E-04
+S - SN FOR N = 2^11: 4.88162639631140E-04
+S - SN FOR N = 2^12: 2.44111404580805E-04
+S - SN FOR N = 2^13: 1.22063439612630E-04
+S - SN FOR N = 2^14: 6.10338704929436E-05
+        \end{verbatim}
+        % subsection numerical_results (end)
+        \subsubsection{Timing} % (fold)
+\begin{verbatim}
+real    0m4.134s
+user    0m15.395s
+sys     0m0.614s
+\end{verbatim}        
+        % subsection timing (end)
+    % subsection mpi_openmp_version (end)
+
 % section results (end)
 \end{document}
