@@ -10,7 +10,7 @@
     \subsection{Serial Version} % (fold)
         The code is organized in a main program and one function, \texttt{S\_N}, which does the actual computation. The main program calls \texttt{S\_N} with various values of \texttt{N}, and writes the result to standard output. The difference $S-S_n$ is written with 15 decimal digits, which roughly corresponds to the precision of double-precision floating point numbers.
 
-        The function \texttt{S\_N} comprises two loops. The first loop generates the vector elements, $v(i) = \frac{1}{i^2}$, using the code \texttt{V(I) = 1.0 / I**2}. (Generated using Fortran's Formula Translator feature.) The second loop computes the sum of these elements by looping through the vector and adding them up. It is worth noting that it sums the numbers from smallest to largest, to minimize loss of precision.
+        The function \texttt{S\_N} comprises two loops. The first loop generates the vector elements, $v(i) = \frac{1}{i^2}$. The second loop computes the sum of these elements by looping through the vector and adding them up. It is worth noting that it sums the numbers from smallest to largest, to minimize loss of precision.
         % subsection serial_version (end)
 
     \subsection{Shared Memory Version} % (fold)
@@ -167,7 +167,7 @@ sys     0m0.614s
 \section{Discussion} % (fold)
 \label{sec:discussion}
     \subsection{Performance}
-    In our testing, we saw that only the shared memory version gives any performance benefit. We think this has less to do with the memory model used, and more to do with the fact that having to create the vector on only one process is a bottleneck. One could argue that this means the distributed memory version is not load-balanced. This problem would diminish if the computation was more complex than summing a vector.
+    In our testing, we saw that only the shared memory version gives any performance benefit. We think this has less to do with the memory model used, and more to do with the fact that having to create the vector on only one process is a bottleneck. One could argue that this means the distributed memory version is not load-balanced. One way to alleviate this would be to gradually decrease the size of the generated chunks, at the cost of increased program complexity.
 
     \subsection{FLOPs}
     To generate the vector $\underline{v}$ we only need $n$ FLOPs. The square $i^2$ can be calculated using integer operations, leaving only the division to be calculated using a floating point operation. Equally the calculation of $S_n$ only need $n$ FLOPs, one for each of number in the vector. These numbers does not increase when solving the problem in parallel.
@@ -186,5 +186,5 @@ sys     0m0.614s
     % section discussion (end)
 
     \subsection{Conclusion}
-    We have created several versions of a program to solve a simple, but computationally intensive problem. While this particular problem has little practical relevance, it models problems one can encounter in real life, and can give insights about how best to solve them.
+    We have created several versions of a program to solve a simple, but computationally intensive problem. While this particular problem has little practical relevance, it models problems one can encounter in real life, and can give insights about how best to solve them. At first glance it seems like a program well suited to parallel computing. While parallelization gave good speedup in one of the programs, we saw that there are pitfalls.
 \end{document}
