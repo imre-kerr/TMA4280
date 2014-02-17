@@ -8,7 +8,7 @@ set(CMAKE_Fortran_FLAGS_RELEASE "${CMAKE_Fortran_FLAGS_RELEASE} -Wall -O2")
 find_package(OpenMP REQUIRED)
 find_package(MPI REQUIRED)
 
-list(APPEND CMAKE_Fortran_FLAGS ${MPI_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS} -ffree-form)
+list(APPEND CMAKE_Fortran_FLAGS ${MPI_Fortran_FLAGS} ${OpenMP_Fortran_FLAGS} "-fopenmp -ffree-form")
 
 include_directories(${MPI_Fortran_INCLUDE_PATH})
 
