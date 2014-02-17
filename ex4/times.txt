@@ -1,0 +1,32 @@
+S = PI^2/6 = 1.64493
+
+SN FOR N = 2^27 = 1.64493
+S - SN = 8.0274078E-09
+
+real	0m1.855s
+user	0m1.266s
+sys	0m0.581s
+S = PI^2/6 = 1.64493
+
+SN FOR N = 2^27 = 1.64493
+S - SN = 8.0274078E-09
+
+real	0m1.843s
+user	0m1.383s
+sys	0m0.455s
+S = PI^2/6 = 1.64493
+
+SN FOR N = 2^27 = 1.64493
+S - SN = 8.0274078E-09
+
+real	0m1.952s
+user	0m6.586s
+sys	0m0.868s
+S = PI^2/6 = 1.64493
+
+SN FOR N = 2^27 = 1.64493
+S - SN = 8.0274078E-09
+
+real	0m1.747s
+user	0m2.895s
+sys	0m0.583s
