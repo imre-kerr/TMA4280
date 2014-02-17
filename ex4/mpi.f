@@ -18,7 +18,7 @@ PROGRAM EX4_MPI
         IF (RANK .EQ. 0) THEN
             WRITE (*, *)
             WRITE (*, "('SN FOR N = 2^'I0.2' = 'F7.5)") K, SK
-            WRITE (*, "('S - SN = 'ES13.7)") S-SK
+            WRITE (*, "('S - SN = 'ES21.14)") S-SK
         END IF
         CALL MPI_BARRIER(MPI_COMM_WORLD, TERROR)
     END DO
