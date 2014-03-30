@@ -24,12 +24,12 @@ void fst_(double *v, int *n, double *w, int *nn);
 void fstinv_(double *v, int *n, double *w, int *nn);
 
 /* global variables <3 */
-static int *local_starts;
-static MPI_Datatype *types;
+static int m_loc, m_padded;
+static MPI_Datatype block_type;
 
 int main(int argc, char **argv )
 {
-  double *diag, **b, **bt, *buf, *z;
+  double *diag, **b, **bt, *sendbuf, *recvbuf, *z;
   double pi, h, umax;
   int i, j, n, m, nn;
 
@@ -52,30 +52,20 @@ int main(int argc, char **argv )
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
   int m_loc = m / size;
-  int extra = m % size;
-
-  local_starts = (int *)malloc((size+1) * sizeof(int));
-  for (i = 0; i < size+1; i++) {
-    int start = i * m_loc;
-    start += (i < extra ? i : extra);
-    int end = (i + 1) * m_loc;
-    end += (i+1 < extra ? i+1 : extra);
-    local_starts[i] = start;
+  if (m % size) {
+    m_loc++;
+    m_padded = m_loc * size;
+  } else {
+    m_padded = m;
   }
 
-  m_loc = local_starts[rank+1] - local_starts[rank];
-
-  types = (MPI_Datatype *)malloc(size * sizeof(MPI_Datatype));
-  for (i = 0; i < size; i++) {
-    MPI_Type_vector(m_loc, local_starts[i+1] - local_starts[i],
-          m, MPI_DOUBLE, types + i);
-    MPI_Type_commit(types + i);
-  }
+  MPI_Type_vector(m_loc, m_loc,
+		  m, MPI_DOUBLE, &block_type);
+  MPI_Type_commit(&block_type);
 
   diag = createdoubleArray (m);
   b    = createdouble2DArray (m_loc,m);
   bt   = createdouble2DArray (m_loc,m);
-  buf  = createdoubleArray (m_loc*m);
   z    = createdoubleArray (nn);
 
   h    = 1./(double)n;
@@ -93,7 +83,7 @@ int main(int argc, char **argv )
     fst_(b[j], &n, z, &nn);
   }
 
-  transpose (bt,b,m);
+  block_transpose (bt, b, m, m_loc, size, rank);
 
   for (i=0; i < m_loc; i++) {
     fstinv_(bt[i], &n, z, &nn);
@@ -109,7 +99,7 @@ int main(int argc, char **argv )
     fst_(bt[i], &n, z, &nn);
   }
 
-  transpose (b,bt,m);
+  block_transpose (b, bt, m, m_loc, size, rank);
 
   for (j=0; j < m_loc; j++) {
     fstinv_(b[j], &n, z, &nn);
@@ -128,24 +118,35 @@ int main(int argc, char **argv )
   return 0;
 }
 
-void blockTranspose (double **bt, double **b, double *buf, int m, int size, int rank)
+void block_transpose (double **bt, double **b, int m, int m_loc, int size, int rank)
 {
-  // TODO: Do an alltoallv, make a recvbuf to get the packed doubles, 
-  //       use MPI_Unpack to get them out. Do a local transpose. 
-  //       Profit? Maybe.
-  int i, pos=0;
+  MPI_Alltoall(*b, 1, block_type, *bt, 1, block_type, MPI_COMM_WORLD);
+  
+  double **temp_block = (double **)(malloc(m_loc*m_loc*sizeof(double)));
+  int i;
   for (i = 0; i < size; i++) {
-    MPI_Pack(*b + *(local_starts+i), 1, *(types + i), buf, sizeof(*b), &pos, MPI_COMM_WORLD);
+    transpose(temp_block, bt, m_loc, m_loc*i);
+    block_copy(temp_block, bt, m_loc*i)
   }
-
+  free (temp_block);
 }
 
-void transpose (double **bt, double **b, int m)
+void block_copy (double **from, double **to, int m, int offset)
+{
+  int i,j;
+  for (j=0; j < m; j++) {
+    for (i=0; i < m; i++) {
+      to[j][i+offset] = from[j][i];
+    }
+  }
+}
+
+void transpose (double **bt, double **b, int m, int offset)
 {
   int i, j;
   for (j=0; j < m; j++) {
     for (i=0; i < m; i++) {
-      bt[j][i] = b[i][j];
+      bt[j][i] = b[i][j+offset];
     }
   }
 }
