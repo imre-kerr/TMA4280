@@ -19,7 +19,10 @@
 /* function prototypes */
 double *createdoubleArray (int n);
 double **createdouble2DArray (int m, int n);
-void transpose (double **bt, double **b, int m);
+
+void block_transpose (double **bt, double **b, int m, int m_loc, int size, int rank);
+void block_copy (double **from, double **to, int m, int offset);
+void transpose (double **bt, double **b, int m, int offset);
 void fst_(double *v, int *n, double *w, int *nn);
 void fstinv_(double *v, int *n, double *w, int *nn);
 
@@ -89,9 +92,10 @@ int main(int argc, char **argv )
     fstinv_(bt[i], &n, z, &nn);
   }
   
-  for (j=0; j < m_loc; j++) {
+  // TODO: Some shit here
+  for (j=0; j < m; j++) {
     for (i=0; i < m; i++) {
-      bt[j][i] = bt[j][i]/(diag[local_starts[rank]+i]+diag[local_starts[rank]+j]);
+      bt[j][i] = bt[j][i]/(diag[i]+diag[j]);
     }
   }
   
@@ -126,7 +130,7 @@ void block_transpose (double **bt, double **b, int m, int m_loc, int size, int r
   int i;
   for (i = 0; i < size; i++) {
     transpose(temp_block, bt, m_loc, m_loc*i);
-    block_copy(temp_block, bt, m_loc*i)
+    block_copy(temp_block, bt, m_loc, m_loc*i);
   }
   free (temp_block);
 }
