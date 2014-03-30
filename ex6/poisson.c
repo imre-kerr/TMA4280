@@ -19,6 +19,7 @@
 /* function prototypes */
 double *createdoubleArray (int n);
 double **createdouble2DArray (int m, int n);
+void freedouble2DArray (double **array);
 
 void block_transpose (double **bt, double **b, int m, int m_loc, int size, int rank);
 void block_copy (double **from, double **to, int m, int offset);
@@ -63,12 +64,12 @@ int main(int argc, char **argv )
   }
 
   MPI_Type_vector(m_loc, m_loc,
-		  m, MPI_DOUBLE, &block_type);
+		  m_padded, MPI_DOUBLE, &block_type);
   MPI_Type_commit(&block_type);
 
   diag = createdoubleArray (m);
-  b    = createdouble2DArray (m_loc,m);
-  bt   = createdouble2DArray (m_loc,m);
+  b    = createdouble2DArray (m_loc,m_padded);
+  bt   = createdouble2DArray (m_loc,m_padded);
   z    = createdoubleArray (nn);
 
   h    = 1./(double)n;
@@ -86,16 +87,16 @@ int main(int argc, char **argv )
     fst_(b[j], &n, z, &nn);
   }
 
-  block_transpose (bt, b, m, m_loc, size, rank);
+  block_transpose (bt, b, m_padded, m_loc, size, rank);
 
   for (i=0; i < m_loc; i++) {
     fstinv_(bt[i], &n, z, &nn);
   }
   
   // TODO: Some shit here
-  for (j=0; j < m; j++) {
+  for (j=0; j < m_loc; j++) {
     for (i=0; i < m; i++) {
-      bt[j][i] = bt[j][i]/(diag[i]+diag[j]);
+      bt[j][i] = bt[j][i]/(diag[i]+diag[j + rank*m_loc]);
     }
   }
   
@@ -103,7 +104,7 @@ int main(int argc, char **argv )
     fst_(bt[i], &n, z, &nn);
   }
 
-  block_transpose (b, bt, m, m_loc, size, rank);
+  block_transpose (b, bt, m_padded, m_loc, size, rank);
 
   for (j=0; j < m_loc; j++) {
     fstinv_(b[j], &n, z, &nn);
@@ -126,13 +127,13 @@ void block_transpose (double **bt, double **b, int m, int m_loc, int size, int r
 {
   MPI_Alltoall(*b, 1, block_type, *bt, 1, block_type, MPI_COMM_WORLD);
   
-  double **temp_block = (double **)(malloc(m_loc*m_loc*sizeof(double)));
+  double **temp_block = createdouble2DArray (m_loc, m_loc);
   int i;
   for (i = 0; i < size; i++) {
     transpose(temp_block, bt, m_loc, m_loc*i);
     block_copy(temp_block, bt, m_loc, m_loc*i);
   }
-  free (temp_block);
+  freedouble2DArray (temp_block);
 }
 
 void block_copy (double **from, double **to, int m, int offset)
@@ -178,4 +179,10 @@ double **createdouble2DArray (int n1, int n2)
   n = n1*n2;
   memset(a[0],0,n*sizeof(double));
   return (a);
+}
+
+void freedouble2DArray (double **array)
+{
+  free(array[0]);
+  free(array);
 }
