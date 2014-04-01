@@ -41,6 +41,7 @@ int main(int argc, char **argv )
 {
   double *diag, **b, **bt, *z;
   double pi, h, umax;
+  double starttime;
   int i, j, k;
   int n, m, nn;
 
@@ -48,7 +49,7 @@ int main(int argc, char **argv )
   /* the total number of degrees-of-freedom in each spatial direction is (n-1) */
   /* this version requires n to be a power of 2 */
 
- if( argc < 2 ) {
+  if( argc < 2 ) {
     printf("need a problem size\n");
     return 1;
   }
@@ -62,6 +63,7 @@ int main(int argc, char **argv )
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+  starttime = MPI_Wtime();
 
   int m_loc = m / size;
   if (m % size) {
@@ -102,6 +104,7 @@ int main(int argc, char **argv )
       b[j][i] = h*h;
     }
   }
+#pragma omp parallel for
   for (j=0; j < m_loc; j++) {
     fst_(b[j], &n, z, &nn);
   }
@@ -139,7 +142,7 @@ int main(int argc, char **argv )
     MPI_Barrier(MPI_COMM_WORLD);
   }
   */
-
+#pragma omp parallel for
   for (i=0; i < m_loc; i++) {
     fstinv_(bt[i], &n, z, &nn);
   }
@@ -150,13 +153,13 @@ int main(int argc, char **argv )
       bt[j][i] = bt[j][i]/(diag[i]+diag[j + rank*m_loc]);
     }
   }
-  
+#pragma omp parallel for
   for (i=0; i < m_loc; i++) {
     fst_(bt[i], &n, z, &nn);
   }
 
   block_transpose (b, bt, m_padded, m_loc, size, rank);
-
+#pragma omp parallel for
   for (j=0; j < m_loc; j++) {
     fstinv_(b[j], &n, z, &nn);
   }
@@ -168,6 +171,11 @@ int main(int argc, char **argv )
     }
   }
   printf (" umax = %e \n",umax);
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (rank == 0) {
+    printf ("Elapsed time: %f secs\n", MPI_Wtime() - starttime);
+  }
 
   MPI_Finalize();
 
