@@ -4,7 +4,7 @@
 #PBS -N poisson
 
 # Allocate two nodes with 12 processors from the default resources
-#PBS -lnodes=1:ppn=12:default
+#PBS -lnodes=2:ppn=12:default
 
 # Expect to run up to 5 minutes
 #PBS -lwalltime=00:05:00
@@ -32,4 +32,4 @@ module load openmpi/1.4.3-intel
 KMP_AFFINITY="granularity=fine,compact"
 
 # Run with 8 MPI processes, each with 3 threads
-OMP_NUM_THREADS=1 mpirun -npernode 4 ./Release/poisson 1024
+OMP_NUM_THREADS=3 mpirun -npernode 4 ./Release/poisson 1024
