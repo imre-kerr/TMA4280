@@ -30,6 +30,7 @@ void fstinv_(double *v, int *n, double *w, int *nn);
 /* global variables <3 */
 static int m_loc, m_padded;
 static MPI_Datatype block_type;
+static int *rscounts, *rsdispls;
 
 int main(int argc, char **argv )
 {
@@ -55,12 +56,21 @@ int main(int argc, char **argv )
   MPI_Comm_size(MPI_COMM_WORLD, &size);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
+
   int m_loc = m / size;
   if (m % size) {
     m_loc++;
     m_padded = m_loc * size;
   } else {
     m_padded = m;
+  }
+
+  rscounts = (int *) malloc (size * sizeof(int));
+  rsdispls = (int *) malloc (size * sizeof(int));
+
+  for (i = 0; i < size; i++) {
+    rscounts[i] = 1;
+    rsdispls[i] = i;
   }
 
   MPI_Type_vector(m_loc, m_loc,
@@ -88,7 +98,6 @@ int main(int argc, char **argv )
   }
 
   block_transpose (bt, b, m_padded, m_loc, size, rank);
-
   for (i=0; i < m_loc; i++) {
     fstinv_(bt[i], &n, z, &nn);
   }
@@ -125,10 +134,11 @@ int main(int argc, char **argv )
 
 void block_transpose (double **bt, double **b, int m, int m_loc, int size, int rank)
 {
-  MPI_Alltoall(*b, 1, block_type, *bt, 1, block_type, MPI_COMM_WORLD);
+  int i,j;
+  printf ("%d total, %d local, %d procs, rank %d\n", m, m_loc, size, rank);
+  MPI_Alltoallv(b[0], rscounts, rsdispls, block_type, bt[0], rscounts, rsdispls, block_type, MPI_COMM_WORLD);
   
   double **temp_block = createdouble2DArray (m_loc, m_loc);
-  int i;
   for (i = 0; i < size; i++) {
     transpose(temp_block, bt, m_loc, m_loc*i);
     block_copy(temp_block, bt, m_loc, m_loc*i);
