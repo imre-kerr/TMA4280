@@ -31,12 +31,18 @@ void fstinv_(double *v, int *n, double *w, int *nn);
 static int m_loc, m_padded;
 static MPI_Datatype block_type;
 static int *rscounts, *rsdispls;
+static double *sendbuf, *recvbuf;
 
+#ifdef TEST
+int not_main(int argc, char **argv)
+#else
 int main(int argc, char **argv )
+#endif
 {
-  double *diag, **b, **bt, *sendbuf, *recvbuf, *z;
+  double *diag, **b, **bt, *z;
   double pi, h, umax;
-  int i, j, n, m, nn;
+  int i, j, k;
+  int n, m, nn;
 
   /* the total number of grid points in each spatial direction is (n+1) */
   /* the total number of degrees-of-freedom in each spatial direction is (n-1) */
@@ -65,12 +71,15 @@ int main(int argc, char **argv )
     m_padded = m;
   }
 
+  sendbuf = (double *) malloc (m_padded*m_loc*sizeof(double));
+  recvbuf = (double *) malloc (m_padded*m_loc*sizeof(double));
+
   rscounts = (int *) malloc (size * sizeof(int));
   rsdispls = (int *) malloc (size * sizeof(int));
 
   for (i = 0; i < size; i++) {
-    rscounts[i] = 1;
-    rsdispls[i] = i;
+    rscounts[i] = m_padded*m_loc;
+    rsdispls[i] = i*m_padded*m_loc;
   }
 
   MPI_Type_vector(m_loc, m_loc,
@@ -88,7 +97,7 @@ int main(int argc, char **argv )
   for (i=0; i < m; i++) {
     diag[i] = 2.*(1.-cos((i+1)*pi/(double)n));
   }
-  for (j=0; j < m_loc; j++) {
+  for (j=0; (rank*m_loc + j < m) && (j < m_loc); j++) {
     for (i=0; i < m; i++) {
       b[j][i] = h*h;
     }
@@ -97,7 +106,40 @@ int main(int argc, char **argv )
     fst_(b[j], &n, z, &nn);
   }
 
+
+  /*
+  for (k = 0; k < size; k++) {
+    if (rank == k) {
+      printf ("Original array, process %d has:\n", rank);
+      for (i = 0; i < m_padded; i++) {
+	for (j = 0; j < m_loc; j++) {
+	  printf("%d ", (int)b[j][i]);
+	}
+	puts("");
+      }
+      puts("");
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+  */
   block_transpose (bt, b, m_padded, m_loc, size, rank);
+  /*
+  MPI_Barrier(MPI_COMM_WORLD);
+  for (k = 0; k < size; k++) {
+    if (rank == k) {
+      printf ("Transposed array, process %d has:\n", rank);
+      for (i = 0; i < m_padded; i++) {
+	for (j = 0; j < m_loc; j++) {
+	  printf("%d ", (int)bt[j][i]);
+	}
+	puts("");
+      }
+      puts("");
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+  */
+
   for (i=0; i < m_loc; i++) {
     fstinv_(bt[i], &n, z, &nn);
   }
@@ -134,10 +176,15 @@ int main(int argc, char **argv )
 
 void block_transpose (double **bt, double **b, int m, int m_loc, int size, int rank)
 {
-  int i,j;
-  printf ("%d total, %d local, %d procs, rank %d\n", m, m_loc, size, rank);
-  MPI_Alltoallv(b[0], rscounts, rsdispls, block_type, bt[0], rscounts, rsdispls, block_type, MPI_COMM_WORLD);
-  
+  int i,j, pos = 0;
+  for (i=0; i < size; i++) {
+    MPI_Pack(b[0]+i*m_loc, 1, block_type, sendbuf, m*m_loc*sizeof(double), &pos, MPI_COMM_WORLD);
+  }
+  MPI_Alltoall(sendbuf, m_loc*m_loc, MPI_DOUBLE, recvbuf, m_loc*m_loc, MPI_DOUBLE, MPI_COMM_WORLD);
+  pos = 0;
+  for (i=0; i < size; i++) {
+    MPI_Unpack(recvbuf, m*m_loc*sizeof(double), &pos, bt[0]+i*m_loc, 1, block_type, MPI_COMM_WORLD);
+  }
   double **temp_block = createdouble2DArray (m_loc, m_loc);
   for (i = 0; i < size; i++) {
     transpose(temp_block, bt, m_loc, m_loc*i);
