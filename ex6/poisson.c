@@ -214,6 +214,7 @@ void block_copy (double **from, double **to, int m, int offset)
 void transpose (double **bt, double **b, int m, int offset)
 {
   int i, j;
+#pragma omp parallel for
   for (j=0; j < m; j++) {
     for (i=0; i < m; i++) {
       bt[j][i] = b[i][j+offset];
