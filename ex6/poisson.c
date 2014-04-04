@@ -39,11 +39,7 @@ double f(double x, double y)
   return 5 * pi * pi * sin (pi*x) * sin (2*pi*y);
 }
 
-#ifdef TEST
-int not_main(int argc, char **argv)
-#else
 int main(int argc, char **argv )
-#endif
 {
   double *diag, **b, **bt, **z;
   double h, umax;
