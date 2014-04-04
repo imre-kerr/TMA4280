@@ -24,7 +24,7 @@
     After the all-to-all, each tile is in the right place, but the tiles themselves still need to be transposed. This is done on a single thread.
     
     \subsection{Shared Memory Parallelization}
-    There is also some parallelism to be had when doing the discrete sine transform. Since each column is transformed individually, parallelization should be as simple as adding \texttt{#pragma omp parallel for} in front of the loops. However, the buffer \texttt{z} needs to be private to each thread. So we allocate \texttt{omp\_get\_max\_threads()} of them, and make sure that each call to \texttt{fst\_} and \texttt{fstinv\_} uses the right one.
+    There is also some parallelism to be had when doing the discrete sine transform. Since each column is transformed individually, parallelization should be as simple as adding \texttt{\#pragma omp parallel for} in front of the loops. However, the buffer \texttt{z} needs to be private to each thread. So we allocate \texttt{omp\_get\_max\_threads()} of them, and make sure that each call to \texttt{fst\_} and \texttt{fstinv\_} uses the right one.
     
 \section{Testing}
     \subsection{Correctness}
@@ -44,16 +44,14 @@
     \hline
     8192 & 178.997s \\
     \hline
-    16384 & 767.524
+    16384 & 767.524\\
     \hline
     \end{tabular}
-
-    There is also some parallelism to be had when doing the discrete sine transform. Since each column is transformed individually, parallelization should be as simple as adding \texttt{\#pragma omp parallel for} in front of the loops. However, the buffer \texttt{z} needs to be private to each thread. So we allocate \texttt{omp\_get\_max\_threads()} of them, and make sure that each call to \texttt{fst\_} and \texttt{fstinv\_} uses the right one.
 
         \subsubsection{Distributed Memory Parallelization}
         These tests were run on three nodes, with 12 processes on each node.
 
-        \begin{tabular}{|r|l|}
+        \begin{tabular}{|r|l|l|}
         \hline
         n & Time & speedup \\
         \hline
@@ -72,7 +70,7 @@
         \subsubsection{Shared Memory Parallelization}
         These tests were run on three nodes, with 2 processes on each node, and 6 threads per process.
 
-        \begin{tabular}{|r|l|}
+        \begin{tabular}{|r|l|l|}
         \hline
         n & Time & speedup \\
         \hline
@@ -87,6 +85,8 @@
         16384 & 36.762s & 20.88 \\
         \hline
         \end{tabular}
+        
+        We see that using fewer processes and more threads is slightly slower. We think this could be solved with a parallel tile-transpose. However this would need to be programmed carefully, to properly utilize the cache.
         
     
 \end{document}
