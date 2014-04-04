@@ -30,7 +30,6 @@ void fstinv_(double *v, int *n, double *w, int *nn);
 /* global variables <3 */
 static int m_loc, m_padded;
 static MPI_Datatype block_type;
-static int *rscounts, *rsdispls;
 static double *sendbuf, *recvbuf;
 static double pi;
 
@@ -77,14 +76,6 @@ int main(int argc, char **argv )
 
   sendbuf = (double *) malloc (m_padded*m_loc*sizeof(double));
   recvbuf = (double *) malloc (m_padded*m_loc*sizeof(double));
-
-  rscounts = (int *) malloc (size * sizeof(int));
-  rsdispls = (int *) malloc (size * sizeof(int));
-
-  for (i = 0; i < size; i++) {
-    rscounts[i] = m_padded*m_loc;
-    rsdispls[i] = i*m_padded*m_loc;
-  }
 
   MPI_Type_vector(m_loc, m_loc,
 		  m_padded, MPI_DOUBLE, &block_type);
