@@ -19,5 +19,66 @@
     
     \subsection{Shared Memory Parallelization}
     There is also some parallelism to be had when doing the discrete sine transform. Since each column is transformed individually, parallelization should be as simple as adding \texttt{#pragma omp parallel for} in front of the loops. However, the buffer \texttt{z} needs to be private to each thread. So we allocate \texttt{omp\_get\_max\_threads()} of them, and make sure that each call to \texttt{fst\_} and \texttt{fstinv\_} uses the right one.
+    
+\section{Testing}
+    \subsection{Correctness}
+    
+    \subsection{Speedup}
+    To establish a baseline, we first timed the sequential version of the program.
+    
+    \begin{tabular}{|r|l|}
+    \hline
+    n & Time \\
+    \hline
+    1024 & 2.269s \\
+    \hline
+    2048 & 9.389s \\
+    \hline
+    4096 & 41.618s \\
+    \hline
+    8192 & 178.997s \\
+    \hline
+    16384 & 767.524
+    \hline
+    \end{tabular}
 
+        \subsubsection{Distributed Memory Parallelization}
+        These tests were run on three nodes, with 12 processes on each node.
+
+        \begin{tabular}{|r|l|}
+        \hline
+        n & Time & speedup \\
+        \hline
+        1024 & 0.143s & 15.86 \\
+        \hline
+        2048 & 0.466s & 20.15 \\
+        \hline
+        4096 & 1.862s & 22.35 \\
+        \hline
+        8192 & 7.703s & 23.24\\
+        \hline
+        16384 & 32.203s & 23.83 \\
+        \hline
+        \end{tabular}
+         
+        \subsubsection{Shared Memory Parallelization}
+        These tests were run on three nodes, with 2 processes on each node, and 6 threads per process.
+
+        \begin{tabular}{|r|l|}
+        \hline
+        n & Time & speedup \\
+        \hline
+        1024 & 0.142s & 15.98 \\
+        \hline
+        2048 & 0.497s & 18.89 \\
+        \hline
+        4096 & 2.057s & 20.23 \\
+        \hline
+        8192 & 8.503s & 21.05\\
+        \hline
+        16384 & 36.762s & 20.88 \\
+        \hline
+        \end{tabular}
+        
+    
 \end{document}
