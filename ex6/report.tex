@@ -87,6 +87,9 @@
         \end{tabular}
         
         We see that using fewer processes and more threads is slightly slower. We think this could be solved with a parallel tile-transpose. However this would need to be programmed carefully, to properly utilize the cache.
-        
+
+\section{Discussion}
+	\subsection{Solving Different Problems}
+	In order to solve the Poisson problem with different values of $f$ some changes has to be made to the code, since $f$ can not be given to the algorithm on runtime. As the algorithm itself has no problem solving for different values of $f$ the only modification that has to be done is to change the function that returns the value $f(x, y)$.
     
 \end{document}
