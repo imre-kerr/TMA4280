@@ -7,7 +7,7 @@
 #PBS -lnodes=2:ppn=12:default
 
 # Expect to run up to 5 minutes
-#PBS -lwalltime=00:05:00
+#PBS -lwalltime=00:45:00
 
 # Memory per process
 #PBS -lpmem=2000MB
@@ -32,4 +32,27 @@ module load openmpi/1.4.3-intel
 KMP_AFFINITY="granularity=fine,compact"
 
 # Run with 8 MPI processes, each with 3 threads
-OMP_NUM_THREADS=3 mpirun -npernode 4 ex6 myparams
+
+N=1024
+while [ $N -lt 16385 ]; do
+    echo .
+    echo Running sequential solver with n = $N
+    time ./Release/poisson-single $N
+    let N=N*2
+done
+
+N=1024
+while [ $N -lt 16385 ]; do
+    echo .
+    echo Running MPI solver with n = $N, nodes = 2 and procs per node = 12
+    OMP_NUM_THREADS=1 mpirun -npernode 12 ./Release/poisson $N
+    let N=N*2
+done
+
+N=1024
+while [ $N -lt 16385 ]; do
+    echo .
+    echo Running MPI solver with n = $N, nodes = 2 and procs per node = 2
+    OMP_NUM_THREADS=6 mpirun -npernode 2 ./Release/poisson $N
+    let N=N*2
+done

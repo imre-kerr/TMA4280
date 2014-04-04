@@ -39,7 +39,7 @@ int not_main(int argc, char **argv)
 int main(int argc, char **argv )
 #endif
 {
-  double *diag, **b, **bt, *z;
+  double *diag, **b, **bt, **z;
   double pi, h, umax;
   double starttime;
   int i, j, k;
@@ -91,7 +91,7 @@ int main(int argc, char **argv )
   diag = createdoubleArray (m);
   b    = createdouble2DArray (m_loc,m_padded);
   bt   = createdouble2DArray (m_loc,m_padded);
-  z    = createdoubleArray (nn);
+  z    = createdouble2DArray (omp_get_max_threads(), nn);
 
   h    = 1./(double)n;
   pi   = 4.*atan(1.);
@@ -106,7 +106,7 @@ int main(int argc, char **argv )
   }
 #pragma omp parallel for
   for (j=0; j < m_loc; j++) {
-    fst_(b[j], &n, z, &nn);
+    fst_(b[j], &n, z[omp_get_thread_num()], &nn);
   }
 
 
@@ -144,7 +144,7 @@ int main(int argc, char **argv )
   */
 #pragma omp parallel for
   for (i=0; i < m_loc; i++) {
-    fstinv_(bt[i], &n, z, &nn);
+    fstinv_(bt[i], &n, z[omp_get_thread_num()], &nn);
   }
   
   // TODO: Some shit here
@@ -155,13 +155,13 @@ int main(int argc, char **argv )
   }
 #pragma omp parallel for
   for (i=0; i < m_loc; i++) {
-    fst_(bt[i], &n, z, &nn);
+    fst_(bt[i], &n, z[omp_get_thread_num()], &nn);
   }
 
   block_transpose (b, bt, m_padded, m_loc, size, rank);
 #pragma omp parallel for
   for (j=0; j < m_loc; j++) {
-    fstinv_(b[j], &n, z, &nn);
+    fstinv_(b[j], &n, z[omp_get_thread_num()], &nn);
   }
 
   umax = 0.0;
@@ -214,7 +214,7 @@ void block_copy (double **from, double **to, int m, int offset)
 void transpose (double **bt, double **b, int m, int offset)
 {
   int i, j;
-#pragma omp parallel for
+#pragma omp parallel for private(i)
   for (j=0; j < m; j++) {
     for (i=0; i < m; i++) {
       bt[j][i] = b[i][j+offset];
