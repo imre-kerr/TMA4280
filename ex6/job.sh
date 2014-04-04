@@ -18,7 +18,7 @@
 # Run in the optimist queue by default
 #PBS -q optimist
 
-# Join stdout and stderr output to one file
+#Join stdout and stderr output to one file
 #PBS -j oe
 
 # Change directory to dir with the job script
