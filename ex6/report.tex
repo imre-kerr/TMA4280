@@ -7,6 +7,12 @@
 
 \section{Introduction}
     \subsection{The Problem}
+    In this project we are going to solve the two-dimensional Poisson problem using both MPI and OpenMP in a hybrid model on the supercomputer Kongull. The two-dimensional Poisson problem is given as:
+    $$-\nabla^2u = f \;\;\; in \; \Omega = (0,1) \times (0,1)$$
+    $$u = 0 \;\;\; on \; \delta\Omega\:.$$
+    To solve this on a computer we will discretize the problem on a finite difference grid with $(n+1)$ points in each spatial direction. The mesh spacing is then $h = \frac{1}{n}$. The standard five-point stencil is used to discretize the Laplace operator.\\
+    To solve the system of algebraic equations we apply the Discrete Sine Transform. This lets us solve the problem in $O(n^2log\textit{n})$.\\
+    We are given a serial implementation of the problem, and our task is to parallelize it to run on several nodes on a supercomputer. Things to consider while doing this is to make sure that the load is balanced between the different cores. Another important aspect is that the memory access is nonuniform, meaning that we have to take care of where the data is located and how the processors is communicating with each other to get the data that is needed. As part of the algorithm is a matrix transpose there will be a lot of communication between the different cores.
     
 \section{Implementation}
     \subsection{Parallelization Strategy}
@@ -18,6 +24,6 @@
     After the all-to-all, each tile is in the right place, but the tiles themselves still need to be transposed. This is done on a single thread.
     
     \subsection{Shared Memory Parallelization}
-    There is also some parallelism to be had when doing the discrete sine transform. Since each column is transformed individually, parallelization should be as simple as adding \texttt{#pragma omp parallel for} in front of the loops. However, the buffer \texttt{z} needs to be private to each thread. So we allocate \texttt{omp\_get\_max\_threads()} of them, and make sure that each call to \texttt{fst\_} and \texttt{fstinv\_} uses the right one.
+    There is also some parallelism to be had when doing the discrete sine transform. Since each column is transformed individually, parallelization should be as simple as adding \texttt{\#pragma omp parallel for} in front of the loops. However, the buffer \texttt{z} needs to be private to each thread. So we allocate \texttt{omp\_get\_max\_threads()} of them, and make sure that each call to \texttt{fst\_} and \texttt{fstinv\_} uses the right one.
 
 \end{document}
