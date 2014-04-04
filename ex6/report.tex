@@ -51,38 +51,38 @@
         \subsubsection{Distributed Memory Parallelization}
         These tests were run on three nodes, with 12 processes on each node.
 
-        \begin{tabular}{|r|l|l|}
+        \begin{tabular}{|r|l|l|l|}
         \hline
-        n & Time & speedup \\
+        n & Time & Speedup & Parallel efficiency\\
         \hline
-        1024 & 0.143s & 15.86 \\
+        1024 & 0.143s & 15.86 & 0.44 \\
         \hline
-        2048 & 0.466s & 20.15 \\
+        2048 & 0.466s & 20.15 & 0.56 \\
         \hline
-        4096 & 1.862s & 22.35 \\
+        4096 & 1.862s & 22.35 & 0.62\\
         \hline
-        8192 & 7.703s & 23.24\\
+        8192 & 7.703s & 23.24 & 0.65\\
         \hline
-        16384 & 32.203s & 23.83 \\
+        16384 & 32.203s & 23.83 & 0.66 \\
         \hline
         \end{tabular}
          
         \subsubsection{Shared Memory Parallelization}
         These tests were run on three nodes, with 2 processes on each node, and 6 threads per process.
 
-        \begin{tabular}{|r|l|l|}
+        \begin{tabular}{|r|l|l|l|}
         \hline
-        n & Time & speedup \\
+        n & Time & Speedup & Parallel efficiency \\
         \hline
-        1024 & 0.142s & 15.98 \\
+        1024 & 0.142s & 15.98 & 0.44 \\
         \hline
-        2048 & 0.497s & 18.89 \\
+        2048 & 0.497s & 18.89 & 0.52 \\
         \hline
-        4096 & 2.057s & 20.23 \\
+        4096 & 2.057s & 20.23 & 0.56 \\
         \hline
-        8192 & 8.503s & 21.05\\
+        8192 & 8.503s & 21.05 & 0.58\\
         \hline
-        16384 & 36.762s & 20.88 \\
+        16384 & 36.762s & 20.88 & 0.58\\
         \hline
         \end{tabular}
         
