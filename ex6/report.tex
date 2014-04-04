@@ -1,0 +1,23 @@
+\documentclass[a4paper, 12pt]{article}
+\title{TMA4280 -- Exercise 6}
+\author{Didrik Jonassen \and Imre Kerr}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+    \subsection{The Problem}
+    
+\section{Implementation}
+    \subsection{Parallelization Strategy}
+    Since the problem is solved by taking the discrete sine transform of each column of matrix $G$, it makes sense to distribute the matrix so that each process has $\frac{n}{p}$ columns. Distributing the matrix like this means that we need to update the transpose function.
+    
+    \subsection{Distributed Transpose}
+    Each process has a vertical segment of the matrix. After transposition this segment needs to lie horizontally. Thus the inter-process communication will consist of partitioning this segment into tiles, and sending one tile to each process. This is done by defining a tile datatype with \texttt{MPI\_Type\_vector}, packing these into contiguous memory with \texttt{MPI\_Pack}, sending with \texttt{MPI\_Alltoall}, and unpacking into tiles again with \texttt{MPI\_Unpack}. Note that we use \texttt{MPI\_Alltoall} rather than \texttt{MPI\_Alltoallv}. This simplifies implementation, but requires us to pad the matrix size to a multiple of $p$.
+    
+    After the all-to-all, each tile is in the right place, but the tiles themselves still need to be transposed. This is done on a single thread.
+    
+    \subsection{Shared Memory Parallelization}
+    There is also some parallelism to be had when doing the discrete sine transform. Since each column is transformed individually, parallelization should be as simple as adding \texttt{#pragma omp parallel for} in front of the loops. However, the buffer \texttt{z} needs to be private to each thread. So we allocate \texttt{omp\_get\_max\_threads()} of them, and make sure that each call to \texttt{fst\_} and \texttt{fstinv\_} uses the right one.
+
+\end{document}
