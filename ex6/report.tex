@@ -91,5 +91,8 @@
 \section{Discussion}
 	\subsection{Solving Different Problems}
 	In order to solve the Poisson problem with different values of $f$ some changes has to be made to the code, since $f$ can not be given to the algorithm on runtime. As the algorithm itself has no problem solving for different values of $f$ the only modification that has to be done is to change the function that returns the value $f(x, y)$.
+
+	\subsection{Rectangular Domain}
+	Since the algorithm requires that we have a quadratic grid with a power of two points in each direction we can not have a set distance $h$ that is the same in both directions when the area to solve has different width and length. Because of this we will get two values of $h$: $h_x = \frac{L_x}{n}$ and $h_y = \frac{L_y}{n}$. Instead of using $h^2$ in our program we would have to use $h_x\times h_y$.
     
 \end{document}
