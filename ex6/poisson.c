@@ -32,6 +32,12 @@ static int m_loc, m_padded;
 static MPI_Datatype block_type;
 static int *rscounts, *rsdispls;
 static double *sendbuf, *recvbuf;
+static double pi;
+
+double f(double x, double y) 
+{
+  return 5 * pi * pi * sin (pi*x) * sin (2*pi*y);
+}
 
 #ifdef TEST
 int not_main(int argc, char **argv)
@@ -40,7 +46,7 @@ int main(int argc, char **argv )
 #endif
 {
   double *diag, **b, **bt, **z;
-  double pi, h, umax;
+  double h, umax;
   double starttime;
   int i, j, k;
   int n, m, nn;
@@ -101,7 +107,7 @@ int main(int argc, char **argv )
   }
   for (j=0; (rank*m_loc + j < m) && (j < m_loc); j++) {
     for (i=0; i < m; i++) {
-      b[j][i] = h*h;
+      b[j][i] = h*h*f(rank*m_loc*h + j*h, i*h);
     }
   }
 #pragma omp parallel for
@@ -109,45 +115,13 @@ int main(int argc, char **argv )
     fst_(b[j], &n, z[omp_get_thread_num()], &nn);
   }
 
-
-  /*
-  for (k = 0; k < size; k++) {
-    if (rank == k) {
-      printf ("Original array, process %d has:\n", rank);
-      for (i = 0; i < m_padded; i++) {
-	for (j = 0; j < m_loc; j++) {
-	  printf("%d ", (int)b[j][i]);
-	}
-	puts("");
-      }
-      puts("");
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-  }
-  */
   block_transpose (bt, b, m_padded, m_loc, size, rank);
-  /*
-  MPI_Barrier(MPI_COMM_WORLD);
-  for (k = 0; k < size; k++) {
-    if (rank == k) {
-      printf ("Transposed array, process %d has:\n", rank);
-      for (i = 0; i < m_padded; i++) {
-	for (j = 0; j < m_loc; j++) {
-	  printf("%d ", (int)bt[j][i]);
-	}
-	puts("");
-      }
-      puts("");
-    }
-    MPI_Barrier(MPI_COMM_WORLD);
-  }
-  */
+
 #pragma omp parallel for
   for (i=0; i < m_loc; i++) {
     fstinv_(bt[i], &n, z[omp_get_thread_num()], &nn);
   }
   
-  // TODO: Some shit here
   for (j=0; j < m_loc; j++) {
     for (i=0; i < m; i++) {
       bt[j][i] = bt[j][i]/(diag[i]+diag[j + rank*m_loc]);
@@ -167,10 +141,18 @@ int main(int argc, char **argv )
   umax = 0.0;
   for (j=0; j < m_loc; j++) {
     for (i=0; i < m; i++) {
-      if (b[j][i] > umax) umax = b[j][i];
+      double uxy = sin(pi*(rank*m_loc*h + j*h)) * sin(2*pi*i*h);
+      double err = fabs(b[j][i] - uxy);
+      if (err > umax) umax = err;
     }
+
   }
-  printf (" umax = %e \n",umax);
+
+  double global_err;
+  MPI_Reduce(&umax, &global_err, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  if (rank == 0) {
+    printf (" Highest error was %e.\n", global_err);
+  }
 
   MPI_Barrier(MPI_COMM_WORLD);
   if (rank == 0) {
